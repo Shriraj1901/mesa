@@ -86,8 +86,11 @@ class ContinuousSpaceAgent(Agent):
             k: the number of nearest neighbors to return
 
         """
-        # return includes self, so we need to get k+1
-        agents, dists = self.space.get_k_nearest_agents(self.position, k=k + 1)
-        logical = np.asarray([agent is not self for agent in agents])
-        agents = list(compress(agents, logical))
-        return agents, dists[logical]
+        dists, agents = self.space.calculate_distances(self.position)
+        # Leave self out before selecting the k nearest. Requesting k + 1 and
+        # filtering afterwards fails when more than k other agents share this
+        # agent's position, because self may then not be among the k + 1.
+        index = self._mesa_index
+        dists = np.delete(dists, index)
+        agents = agents[:index] + agents[index + 1 :]
+        return self.space._select_k_nearest(dists, agents, k)

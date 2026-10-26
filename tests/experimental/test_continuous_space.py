@@ -433,6 +433,42 @@ def test_get_neighbor_methos():  # noqa: D103
     assert np.allclose(distances, [0.2, 0.2])
 
 
+def test_get_nearest_neighbors_co_located_agents():
+    """Test that co-located agents get exactly k neighbors, never themselves."""
+    model = Model(rng=1)
+    space = ContinuousSpace([[0, 10], [0, 10]], random=model.random)
+    agents = [ContinuousSpaceAgent(space, model) for _ in range(5)]
+    for agent in agents:
+        agent.position = (5.0, 5.0)
+
+    for agent in agents:
+        for k in (1, 2, 4):
+            neighbors, distances = agent.get_nearest_neighbors(k=k)
+            assert len(neighbors) == k
+            assert len(distances) == k
+            assert agent not in neighbors
+            assert np.all(distances == 0)
+            # repeated queries return the same neighbors
+            assert agent.get_nearest_neighbors(k=k)[0] == neighbors
+
+
+def test_get_nearest_neighbors_k_larger_than_neighbors():
+    """Test that asking for more neighbors than exist warns and returns all others."""
+    model = Model(rng=42)
+    space = ContinuousSpace([[0, 10], [0, 10]], random=model.random)
+
+    a1 = ContinuousSpaceAgent(space, model)
+    a1.position = np.array([1.0, 1.0])
+    a2 = ContinuousSpaceAgent(space, model)
+    a2.position = np.array([9.0, 9.0])
+
+    with pytest.warns(UserWarning):
+        neighbors, distances = a1.get_nearest_neighbors(k=5)
+
+    assert neighbors == [a2]
+    assert len(distances) == 1
+
+
 def test_agent_removal_no_ghost_entries():
     """Test that removing an agent doesn't leave ghost entries in _index_to_agent.
 

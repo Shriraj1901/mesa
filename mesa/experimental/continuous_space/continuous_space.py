@@ -268,6 +268,16 @@ class ContinuousSpace[A: ContinuousSpaceAgent]:
 
         """
         dists, agents = self.calculate_distances(point)
+        return self._select_k_nearest(dists, agents, k)
+
+    @staticmethod
+    def _select_k_nearest(
+        dists: np.ndarray, agents: list, k: int
+    ) -> tuple[list, np.ndarray]:
+        """Return the k agents with the smallest distances.
+
+        See get_k_nearest_agents for how ties and small populations are handled.
+        """
         n = len(dists)
         # Handle empty space or invalid k
         if n == 0 or k <= 0:
@@ -279,7 +289,7 @@ class ContinuousSpace[A: ContinuousSpaceAgent]:
                 f"Requested k={k} nearest agents but only {n} agent(s) are present in the space. "
                 f"Returning all {n} agent(s).",
                 UserWarning,
-                stacklevel=2,
+                stacklevel=3,
             )
             k = n
 
