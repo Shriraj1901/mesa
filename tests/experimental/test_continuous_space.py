@@ -535,6 +535,45 @@ def test_continuous_space_k_zero():
     assert len(dists) == 0
 
 
+def test_continuous_space_k_nearest_ties():
+    """Test that ties at the k-th distance are broken in favor of earlier agents."""
+    model = Model(rng=42)
+    space = ContinuousSpace([[0, 10], [0, 10]], random=model.random)
+
+    distances = [1, 0, 2, 0, 1, 2, 0, 1, 0, 2, 1, 0, 2, 1, 0, 1]
+    agents = []
+    for distance in distances:
+        agent = ContinuousSpaceAgent(space, model)
+        agent.position = np.array([5.0 + distance, 5.0])
+        agents.append(agent)
+
+    for k in range(1, len(agents) + 1):
+        # documented rule: smallest distances first, earlier inserted agents first
+        ranked = sorted(range(len(agents)), key=lambda i: (distances[i], i))
+        expected = {agents[i] for i in ranked[:k]}
+
+        nearest, dists = space.get_k_nearest_agents(np.array([5.0, 5.0]), k=k)
+
+        assert set(nearest) == expected
+        assert sorted(dists) == sorted(distances[i] for i in ranked[:k])
+
+
+def test_get_nearest_neighbors_co_located_agents():
+    """Test that co-located agents get exactly k neighbors, never themselves."""
+    model = Model(rng=1)
+    space = ContinuousSpace([[0, 10], [0, 10]], random=model.random)
+    agents = [ContinuousSpaceAgent(space, model) for _ in range(5)]
+    for agent in agents:
+        agent.position = (5.0, 5.0)
+
+    for agent in agents:
+        for k in (1, 2, 4):
+            neighbors, distances = agent.get_nearest_neighbors(k=k)
+            assert len(neighbors) == k
+            assert len(distances) == k
+            assert agent not in neighbors
+
+
 def test_continuous_space_k_exact():
     """Test that exact k nearest agents are returned."""
     model = Model(rng=42)
