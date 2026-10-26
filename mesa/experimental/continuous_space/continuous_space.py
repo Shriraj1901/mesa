@@ -283,7 +283,6 @@ class ContinuousSpace[A: ContinuousSpaceAgent]:
             )
             k = n
 
-        # np.argpartition expects zero-based index (k-1) and returns the indices of the k smallest distances
         # np.argpartition does not break ties in a defined order, so take every agent
         # closer than the k-th distance and fill up with the earliest inserted agents
         # at exactly that distance.
