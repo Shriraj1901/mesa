@@ -283,9 +283,9 @@ class ContinuousSpace[A: ContinuousSpaceAgent]:
             )
             k = n
 
-        # np.argpartition does not break ties in a defined order, so take every agent
-        # closer than the k-th distance and fill up with the earliest inserted agents
-        # at exactly that distance.
+        # np.argpartition is deterministic but not stable, so it does not rank tied
+        # agents by insertion order. Take every agent closer than the k-th distance
+        # and fill up with the earliest inserted agents at exactly that distance.
         kth_dist = np.partition(dists, k - 1)[k - 1]
         closer = np.flatnonzero(dists < kth_dist)
         tied = np.flatnonzero(dists == kth_dist)[: k - len(closer)]
